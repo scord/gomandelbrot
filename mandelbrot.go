@@ -78,7 +78,7 @@ func setColor(m *image.RGBA, colors []color.RGBA, px, py, maxi int, zoom float32
 func main() {
 
 	runtime.GOMAXPROCS(runtime.NumCPU())
-	m := mandelbrot(3000, 3000, 100, 1.0, 1)
+	m := mandelbrot(1000, 1000, 100, 1.0, 1)
 
 	w, _ := os.Create("mandelbrot.png")
 	defer w.Close()

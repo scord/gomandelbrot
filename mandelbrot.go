@@ -4,9 +4,9 @@ import (
 	"image"
 	"image/color"
 	"image/png"
-	"math/cmplx"
 	"math/rand"
 	"os"
+	"runtime"
 	"sync"
 )
 
@@ -27,14 +27,14 @@ func mandelbrot(w, h, i int, z float32, seed int64) *image.RGBA {
 	m := image.NewRGBA(image.Rect(0, 0, w, h))
 
 	b := m.Bounds()
-	wg.Add(b.Size().X * b.Size().Y)
+	wg.Add(b.Size().Y)
 	for y := b.Min.Y; y < b.Max.Y; y++ {
-		for x := b.Min.X; x < b.Max.X; x++ {
-			go func(x, y int) {
+		go func(y int) {
+			for x := b.Min.X; x < b.Max.X; x++ {
 				setColor(m, colors, x, y, i, zoom)
-				wg.Done()
-			}(x, y)
-		}
+			}
+			wg.Done()
+		}(y)
 	}
 
 	wg.Wait()
@@ -64,13 +64,9 @@ func setColor(m *image.RGBA, colors []color.RGBA, px, py, maxi int, zoom float32
 
 	for x*x+y*y < 2*2 && i < maxi {
 
-		z := complex(float32(x), float32(y))
-		zz := complex64(cmplx.Pow(complex128(z), 2))
-
-		c := complex(x0, y0)
-
-		x = real(zz + c)
-		y = imag(zz + c)
+		xtemp := x*x - y*y + x0
+		y = 2*x*y + y0
+		x = xtemp
 
 		i++
 	}
@@ -80,7 +76,8 @@ func setColor(m *image.RGBA, colors []color.RGBA, px, py, maxi int, zoom float32
 
 func main() {
 
-	m := mandelbrot(1000, 600, 50, 1.0, 2)
+	runtime.GOMAXPROCS(runtime.NumCPU())
+	m := mandelbrot(3000, 3000, 50, 1.0, 2)
 
 	w, _ := os.Create("mandelbrot.png")
 	defer w.Close()

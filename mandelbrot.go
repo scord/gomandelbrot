@@ -10,13 +10,7 @@ import (
 	"sync"
 )
 
-type pixel struct {
-	x, y int
-}
-
 func mandelbrot(w, h, i int, z float32, seed int64) *image.RGBA {
-
-	work := make(chan pixel)
 
 	var wg sync.WaitGroup
 
@@ -32,33 +26,16 @@ func mandelbrot(w, h, i int, z float32, seed int64) *image.RGBA {
 
 	m := image.NewRGBA(image.Rect(0, 0, w, h))
 
-	for t := 0; t < runtime.NumCPU(); t++ {
-		go func() {
-			for {
-				pixel, morePixels := <-work
-
-				if !morePixels {
-					return
-				}
-
-				setColor(m, colors, pixel.x, pixel.y, i, zoom)
-
-				wg.Done()
-			}
-		}()
-	}
-
 	b := m.Bounds()
-	wg.Add(b.Size().X * b.Size().Y)
-
-	go func() {
-
-		for y := b.Min.Y; y < b.Max.Y; y++ {
+	wg.Add(b.Size().Y)
+	for y := b.Min.Y; y < b.Max.Y; y++ {
+		go func(y int) {
 			for x := b.Min.X; x < b.Max.X; x++ {
-				work <- pixel{x, y}
+				setColor(m, colors, x, y, i, zoom)
 			}
-		}
-	}()
+			wg.Done()
+		}(y)
+	}
 
 	wg.Wait()
 
@@ -96,14 +73,12 @@ func setColor(m *image.RGBA, colors []color.RGBA, px, py, maxi int, zoom float32
 	}
 
 	m.Set(px, py, colors[i-1])
-
-	return
 }
 
 func main() {
 
 	runtime.GOMAXPROCS(runtime.NumCPU())
-	m := mandelbrot(1000, 1000, 100, 1.0, 1)
+	m := mandelbrot(3000, 3000, 100, 1.0, 1)
 
 	w, _ := os.Create("mandelbrot.png")
 	defer w.Close()

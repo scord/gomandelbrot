@@ -7,7 +7,6 @@ import (
 	"math/rand"
 	"os"
 	"runtime"
-	"sync"
 )
 
 type pixel struct {
@@ -17,8 +16,6 @@ type pixel struct {
 func mandelbrot(w, h, i int, z float32, seed int64) *image.RGBA {
 
 	work := make(chan pixel)
-
-	var wg sync.WaitGroup
 
 	colors := make([]color.RGBA, i)
 
@@ -32,35 +29,23 @@ func mandelbrot(w, h, i int, z float32, seed int64) *image.RGBA {
 
 	m := image.NewRGBA(image.Rect(0, 0, w, h))
 
-	for t := 0; t < runtime.NumCPU(); t++ {
+	for t := 0; t < 256; t++ {
 		go func() {
-			for {
-				pixel, morePixels := <-work
-
-				if !morePixels {
-					return
-				}
-
-				setColor(m, colors, pixel.x, pixel.y, i, zoom)
-
-				wg.Done()
+			for p := range work {
+				setColor(m, colors, p.x, p.y, i, zoom)
 			}
 		}()
 	}
 
 	b := m.Bounds()
-	wg.Add(b.Size().X * b.Size().Y)
 
-	go func() {
-
-		for y := b.Min.Y; y < b.Max.Y; y++ {
-			for x := b.Min.X; x < b.Max.X; x++ {
-				work <- pixel{x, y}
-			}
+	for y := b.Min.Y; y < b.Max.Y; y++ {
+		for x := b.Min.X; x < b.Max.X; x++ {
+			work <- pixel{x, y}
 		}
-	}()
+	}
 
-	wg.Wait()
+	close(work)
 
 	return m
 

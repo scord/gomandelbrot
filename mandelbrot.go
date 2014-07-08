@@ -65,6 +65,7 @@ func setColor(m *image.RGBA, colors []color.RGBA, px, py, maxi int, zoom float32
 	for x*x+y*y < 2*2 && i < maxi {
 
 		xtemp := x*x - y*y + x0
+
 		y = 2*x*y + y0
 		x = xtemp
 
@@ -77,7 +78,7 @@ func setColor(m *image.RGBA, colors []color.RGBA, px, py, maxi int, zoom float32
 func main() {
 
 	runtime.GOMAXPROCS(runtime.NumCPU())
-	m := mandelbrot(3000, 3000, 50, 1.0, 2)
+	m := mandelbrot(3000, 3000, 100, 1.0, 1)
 
 	w, _ := os.Create("mandelbrot.png")
 	defer w.Close()

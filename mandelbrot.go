@@ -16,17 +16,14 @@ type tile struct {
 
 func mandelbrot(w, h, i int, z float32, seed int64) *image.RGBA {
 
-	work := make(chan tile)
-
 	colors := make([]color.RGBA, i)
-
 	rand.Seed(seed)
-
-	var wg = new(sync.WaitGroup)
-
 	for index := range colors {
 		colors[index] = randomColor()
 	}
+
+	var wg = new(sync.WaitGroup)
+	work := make(chan tile)
 
 	zoom := 1 / z
 
@@ -85,9 +82,7 @@ func setColor(m *image.RGBA, colors []color.RGBA, px, py, maxi int, zoom float32
 	i := 0
 
 	for x*x+y*y < 2*2 && i < maxi {
-
 		xtemp := x*x - y*y + x0
-
 		y = 2*x*y + y0
 		x = xtemp
 
@@ -95,13 +90,11 @@ func setColor(m *image.RGBA, colors []color.RGBA, px, py, maxi int, zoom float32
 	}
 
 	m.Set(px, py, colors[i-1])
-
-	return
 }
 
 func main() {
 	runtime.GOMAXPROCS(runtime.NumCPU())
-	m := mandelbrot(1000, 1000, 1000, 1.0, 346)
+	m := mandelbrot(800, 800, 1000, 1.0, 50)
 
 	w, _ := os.Create("mandelbrot.png")
 	defer w.Close()
